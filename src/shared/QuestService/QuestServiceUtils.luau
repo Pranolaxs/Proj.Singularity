@@ -1,0 +1,3 @@
+local QuestServiceUtils = {}
+
+return QuestServiceUtils

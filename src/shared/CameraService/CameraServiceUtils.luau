@@ -1,0 +1,3 @@
+local CameraServiceUtils = {}
+
+return CameraServiceUtils

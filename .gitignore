@@ -1,0 +1,26 @@
+# Rojo build outputs
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+
+# Generated Wally packages
+Packages/
+ServerPackages/
+
+# Generated maps and type output
+sourcemap.json
+sourcemap.*.json
+*.sourcemap.json
+
+# Logs and temp files
+*.log
+tmp/
+temp/
+.tmp/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/

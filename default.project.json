@@ -1,0 +1,42 @@
+{
+  "name": "Singularity",
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Features": {
+        "$path": "src/features"
+      },
+      "Packages":{
+        "$path": "Packages"
+      }
+    },
+
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server.server.luau"
+      },
+      "Services": {
+        "$path": "src/server/Services"
+      },
+      "ServerPackages":{
+        "$path": "ServerPackages"
+      }
+    },
+
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        },
+        "MountUI": {
+          "$path": "src/startup/MountUI.client.luau"
+        }
+      }
+    }
+
+  }
+}
