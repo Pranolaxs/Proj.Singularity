@@ -5,22 +5,17 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local InventoryServiceUtils = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("InventoryService"):WaitForChild("InventoryServiceUtils"))
 local DamageUtils = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DamageCalcService"):WaitForChild("DamageCalcServiceUtils"))
+local WeaponRegistry = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponRegistry"))
 local DataServiceServer = require(ServerScriptService:WaitForChild("Services"):WaitForChild("DataService"):WaitForChild("DataServiceServer"))
+local WeaponFactory = require(script.Parent:WaitForChild("WeaponFactory"))
 
 local InventoryServiceServer = {}
 export type InventoryServiceServer = typeof(InventoryServiceServer) & {}
 
 local DEFAULT_SKINS = { "Default", "NeonRuin" }
-local DEFAULT_SKILLS = { "Dash", "Ghost" }
-local DEFAULT_WEAPONS = { "KnockbackStick", "Scythe" }
+local DEFAULT_SKILLS = { "Dash", "Ghost", "Hook", "Push", "Repel", "Cloak", "LivingShadow" }
+local DEFAULT_WEAPONS = WeaponRegistry.listIds()
 local initialized = false
-
-local DEFAULT_WEAPON_CONFIG = {
-	VisualName = nil,
-	BaseKnockback = 40,
-	DamageMultiplier = 1.8,
-	DamagePerHit = 25,
-}
 
 local function waitForAttribute(player: Player, attributeName: string, timeout: number)
 	local value = player:GetAttribute(attributeName)
@@ -71,20 +66,7 @@ local function clearTools(player: Player, character: Model?)
 end
 
 local function getWeaponConfig(tool: Tool)
-	local config = table.clone(DEFAULT_WEAPON_CONFIG)
-	config.VisualName = tool.Name
-
-	local configModule = tool:FindFirstChild("WeaponConfig")
-	if configModule and configModule:IsA("ModuleScript") then
-		local success, moduleConfig = pcall(require, configModule)
-		if success and type(moduleConfig) == "table" then
-			for key, value in pairs(moduleConfig) do
-				config[key] = value
-			end
-		end
-	end
-
-	return config
+	return WeaponRegistry.getOrDefault(tool.Name)
 end
 
 local function findWeaponVisual(tool: Tool, config): Instance?
@@ -133,13 +115,15 @@ local function publishWeaponPreviewModels()
 		return
 	end
 
-	for _, weapon in ipairs(weaponFolder:GetChildren()) do
-		if weapon:IsA("Tool") then
+	for _, weaponName in ipairs(WeaponRegistry.listIds()) do
+		local config = WeaponRegistry.get(weaponName)
+		local weapon = if config then weaponFolder:FindFirstChild(config.ModelName) else nil
+		if weapon and weapon:IsA("Tool") then
 			local config = getWeaponConfig(weapon)
 			local visual = findWeaponVisual(weapon, config)
 			if visual then
 				local model = Instance.new("Model")
-				model.Name = weapon.Name
+				model.Name = weaponName
 
 				local clone = visual:Clone()
 				clone.Name = "PreviewVisual"
@@ -240,7 +224,7 @@ local function bindWeapon(player: Player, tool: Tool)
 			swingTrack:Play()
 		end
 
-		task.delay(0.5, function()
+		task.delay(config.HitCooldown, function()
 			isSwinging = false
 		end)
 	end)
@@ -272,7 +256,7 @@ local function bindWeapon(player: Player, tool: Tool)
 		swingHitCharacters[targetCharacter] = true
 
 		debounce[targetCharacter] = true
-		task.delay(0.5, function()
+		task.delay(config.HitCooldown, function()
 			debounce[targetCharacter] = nil
 		end)
 
@@ -317,17 +301,15 @@ local function equipWeapon(player: Player, weaponName: string): boolean
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local backpack = player:FindFirstChild("Backpack")
-	local weaponFolder = ServerStorage:WaitForChild("WeaponInventory")
-	local weaponTemplate = weaponFolder:FindFirstChild(weaponName)
+	local newWeapon = WeaponFactory.createWeapon(weaponName)
 
-	if not character or not humanoid or not backpack or not weaponTemplate then
+	if not character or not humanoid or not backpack or not newWeapon then
 		warn("InventoryService: missing weapon " .. tostring(weaponName))
 		return false
 	end
 
 	clearTools(player, character)
 
-	local newWeapon = weaponTemplate:Clone()
 	bindWeapon(player, newWeapon)
 	newWeapon.Parent = backpack
 	humanoid:EquipTool(newWeapon)

@@ -1,5 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local hookEvent = ReplicatedStorage:WaitForChild("HookEvent")
+local AnimationServiceUtils = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("AnimationService"):WaitForChild("AnimationServiceUtils"))
 
 local HookSkill = {}
 HookSkill.SkillName = "HOOK"
@@ -10,48 +11,30 @@ HookSkill.LastUsed = 0
 HookSkill.SkillIcon = "rbxassetid://71833534900512"
 
 local mouse
-local swingTrack: AnimationTrack? = nil
-local toolConnection: RBXScriptConnection? = nil
+local hookTrack: AnimationTrack? = nil
 
-local function loadSwingTrack(character: Model)
-	if swingTrack then
+local function loadHookTrack(character: Model)
+	if hookTrack then
 		return
 	end
 
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
-	local tool = character:FindFirstChildOfClass("Tool")
-	local swingAnim = tool and tool:FindFirstChild("SwingAnim")
-	if animator and swingAnim and swingAnim:IsA("Animation") then
-		swingTrack = animator:LoadAnimation(swingAnim)
-		swingTrack.Priority = Enum.AnimationPriority.Action
+	if animator then
+		hookTrack = AnimationServiceUtils.loadTrack(animator, "HookCast")
 	end
 end
 
 function HookSkill.Equip(player, character)
 	mouse = player:GetMouse()
-	loadSwingTrack(character)
-
-	if toolConnection then
-		toolConnection:Disconnect()
-	end
-
-	toolConnection = character.ChildAdded:Connect(function(child)
-		if child:IsA("Tool") then
-			loadSwingTrack(character)
-		end
-	end)
+	loadHookTrack(character)
 end
 
 function HookSkill.Unequip()
 	mouse = nil
-	if toolConnection then
-		toolConnection:Disconnect()
-		toolConnection = nil
-	end
-	if swingTrack then
-		swingTrack:Stop()
-		swingTrack = nil
+	if hookTrack then
+		hookTrack:Stop()
+		hookTrack = nil
 	end
 end
 
@@ -62,8 +45,8 @@ function HookSkill.Execute(player, character, networker)
 	HookSkill.LastUsed = tick()
 	character:SetAttribute("IsCasting", true)
 	character:SetAttribute("LastCombatTick", tick())
-	if swingTrack then
-		swingTrack:Play()
+	if hookTrack then
+		hookTrack:Play()
 	end
 
 	if mouse then

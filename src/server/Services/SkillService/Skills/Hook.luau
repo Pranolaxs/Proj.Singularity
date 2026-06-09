@@ -1,5 +1,6 @@
 local Hook = {}
 Hook.Name = "Hook"
+Hook.ServerCooldown = 2
 
 function Hook.execute(context, player: Player, payload)
 	if typeof(payload) ~= "table" or typeof(payload.targetPosition) ~= "Vector3" then

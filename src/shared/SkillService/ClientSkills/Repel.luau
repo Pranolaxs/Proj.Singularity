@@ -1,5 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local repelEvent = ReplicatedStorage:WaitForChild("RepelSkillEvent")
+local AnimationServiceUtils = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("AnimationService"):WaitForChild("AnimationServiceUtils"))
 
 local RepelSkill = {}
 RepelSkill.SkillName = "REPEL"
@@ -10,36 +11,18 @@ RepelSkill.CurrentCooldown = 5
 RepelSkill.LastUsed = 0
 RepelSkill.SkillIcon = "rbxassetid://103963230014073"
 
-local repelTrack: AnimationTrack? = nil
+function RepelSkill.Equip(_player, _character) end
 
-function RepelSkill.Equip(player, character)
-	local humanoid = character:FindFirstChildOfClass("Humanoid")
-	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
-	if animator then
-		local animation = Instance.new("Animation")
-		animation.AnimationId = "rbxassetid://102260175085770"
-		repelTrack = animator:LoadAnimation(animation)
-		repelTrack.Priority = Enum.AnimationPriority.Action
-	end
-end
+function RepelSkill.Unequip() end
 
-function RepelSkill.Unequip()
-	if repelTrack then
-		repelTrack:Stop()
-		repelTrack = nil
-	end
-end
-
-function RepelSkill.Execute(player, character, networker)
+function RepelSkill.Execute(_player, character, networker)
 	if tick() - RepelSkill.LastUsed < RepelSkill.CurrentCooldown then return end
 	if character:GetAttribute("IsCasting") or character:GetAttribute("IsDashing") then return end
 
 	RepelSkill.LastUsed = tick()
 	character:SetAttribute("IsCasting", true)
 	character:SetAttribute("LastCombatTick", tick())
-	if repelTrack then
-		repelTrack:Play()
-	end
+	AnimationServiceUtils.playCharacterAnimation(character, "RepelCast")
 	if networker then
 		networker:fire("UseSkill", "Repel")
 	else

@@ -53,6 +53,10 @@ local function setupEntity(character: Model)
 	textLabel.Font = Enum.Font.FredokaOne
 	textLabel.Parent = billboard
 
+	local function refreshDamageUiVisibility()
+		billboard.Enabled = character:GetAttribute("IsCloaked") ~= true
+	end
+
 	character:GetAttributeChangedSignal("DamagePercent"):Connect(function()
 		local currentDamage = character:GetAttribute("DamagePercent") or 0
 		textLabel.Text = tostring(currentDamage) .. "%"
@@ -65,6 +69,9 @@ local function setupEntity(character: Model)
 			textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 		end
 	end)
+
+	character:GetAttributeChangedSignal("IsCloaked"):Connect(refreshDamageUiVisibility)
+	refreshDamageUiVisibility()
 end
 
 function DamageCalcServiceServer.build()

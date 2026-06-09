@@ -23,6 +23,30 @@ local KEY_SLOTS = {
 	[Enum.KeyCode.F] = "F",
 }
 
+local function shouldKeepCloakPartHidden(instance: Instance): boolean
+	if not instance:IsA("BasePart") then
+		return false
+	end
+
+	local tool = instance:FindFirstAncestorOfClass("Tool")
+	return tool ~= nil and instance.Name == "Handle"
+end
+
+local function applyLocalCloakView()
+	local currentCharacter = character
+	if not currentCharacter or currentCharacter:GetAttribute("IsCloaked") ~= true then
+		return
+	end
+
+	for _, descendant in ipairs(currentCharacter:GetDescendants()) do
+		if descendant:IsA("BasePart") and descendant.Name ~= "HumanoidRootPart" then
+			descendant.Transparency = if shouldKeepCloakPartHidden(descendant) then 1 else 0.75
+		elseif descendant:IsA("Decal") or descendant:IsA("Texture") then
+			descendant.Transparency = 0.75
+		end
+	end
+end
+
 local function disconnectAttributeConnections()
 	for _, connection in ipairs(attributeConnections) do
 		connection:Disconnect()
@@ -41,6 +65,7 @@ local function setSkillHudState(player: Player, keyCode: Enum.KeyCode, skillModu
 		player:SetAttribute("SkillHud_" .. slot .. "_Icon", "")
 		player:SetAttribute("SkillCooldown_" .. slot .. "_Total", 0)
 		player:SetAttribute("SkillCooldown_" .. slot .. "_Remaining", 0)
+		player:SetAttribute("SkillHud_" .. slot .. "_State", "")
 		return
 	end
 
@@ -48,6 +73,7 @@ local function setSkillHudState(player: Player, keyCode: Enum.KeyCode, skillModu
 	player:SetAttribute("SkillHud_" .. slot .. "_Icon", skillModule.SkillIcon or "")
 	player:SetAttribute("SkillCooldown_" .. slot .. "_Total", skillModule.CurrentCooldown or skillModule.BaseCooldown or 0)
 	player:SetAttribute("SkillCooldown_" .. slot .. "_Remaining", 0)
+	player:SetAttribute("SkillHud_" .. slot .. "_State", "Ready")
 end
 
 local function loadSkill(player: Player, skillName: string?, keyCode: Enum.KeyCode)
@@ -126,6 +152,8 @@ function SkillServiceClient.init()
 	end
 
 	RunService.RenderStepped:Connect(function(dt)
+		applyLocalCloakView()
+
 		cooldownAccumulator += dt
 		if cooldownAccumulator < 0.05 then
 			return
@@ -135,8 +163,11 @@ function SkillServiceClient.init()
 		for keyCode, skillModule in pairs(activeSkills) do
 			local slot = KEY_SLOTS[keyCode]
 			if slot then
-				local total = skillModule.CurrentCooldown or skillModule.BaseCooldown or 0
-				local remaining = math.max(0, total - (tick() - (skillModule.LastUsed or 0)))
+				local hudState = if type(skillModule.GetHudState) == "function" then skillModule.GetHudState(player) else nil
+				local total = if hudState then hudState.total or 0 else skillModule.CurrentCooldown or skillModule.BaseCooldown or 0
+				local remaining = if hudState then hudState.remaining or 0 else math.max(0, total - (tick() - (skillModule.LastUsed or 0)))
+				player:SetAttribute("SkillHud_" .. slot .. "_Name", if hudState and hudState.name then hudState.name else skillModule.SkillName or "")
+				player:SetAttribute("SkillHud_" .. slot .. "_State", if hudState and hudState.state then hudState.state else if remaining > 0.05 then "Cooldown" else "Ready")
 				player:SetAttribute("SkillCooldown_" .. slot .. "_Total", total)
 				player:SetAttribute("SkillCooldown_" .. slot .. "_Remaining", remaining)
 			end

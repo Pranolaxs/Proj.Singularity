@@ -4,7 +4,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Signal = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Signal"))
+
 local DamageCalcServiceUtils = {}
+DamageCalcServiceUtils.OnEntityHit = Signal.new()
 
 local function getOrCreateRemote(remoteName: string): RemoteEvent?
 	if not RunService:IsServer() then
@@ -161,6 +164,12 @@ function DamageCalcServiceUtils.addDamage(character: Model, amount: number): num
 	character:SetAttribute("DamagePercent", newDamage)
 
 	if RunService:IsServer() then
+		DamageCalcServiceUtils.OnEntityHit:Fire({
+			character = character,
+			amount = amount,
+			newDamage = newDamage,
+			attackerName = character:GetAttribute("LastAttacker"),
+		})
 		emitHitParticles(character)
 		flashCharacterRed(character)
 		fireHitIndicator(character, amount, newDamage)

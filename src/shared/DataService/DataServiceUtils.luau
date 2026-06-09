@@ -1,3 +1,5 @@
+local WeaponRegistry = require(script.Parent.Parent:WaitForChild("WeaponRegistry"))
+
 local DataServiceUtils = {}
 
 DataServiceUtils.DEFAULT_DATA = {
@@ -8,9 +10,9 @@ DataServiceUtils.DEFAULT_DATA = {
 	EquippedSkill_E = "Dash",
 	EquippedSkill_R = "Push",
 	EquippedSkill_F = "Repel",
-	SkillInventory = { "Dash", "Ghost", "Hook", "Push", "Repel" },
-	EquippedWeapon = "KnockbackStick",
-	WeaponInventory = { "KnockbackStick", "Scythe" },
+	SkillInventory = { "Dash", "Ghost", "Hook", "Push", "Repel", "Cloak", "LivingShadow" },
+	EquippedWeapon = WeaponRegistry.DEFAULT_WEAPON_ID,
+	WeaponInventory = WeaponRegistry.listIds(),
 }
 
 function DataServiceUtils.copy(value)

@@ -31,9 +31,34 @@ local function applyAttributes(player: Player, data)
 	player:SetAttribute("WeaponInventoryData", table.concat(data.WeaponInventory or {}, ","))
 end
 
+local function reconcileList(data, key: string)
+	local defaults = DataServiceUtils.DEFAULT_DATA[key]
+	local list = data[key]
+	if type(defaults) ~= "table" then
+		return
+	end
+	if type(list) ~= "table" then
+		data[key] = DataServiceUtils.copy(defaults)
+		return
+	end
+
+	for _, defaultItem in ipairs(defaults) do
+		if table.find(list, defaultItem) == nil then
+			table.insert(list, defaultItem)
+		end
+	end
+end
+
+local function reconcileData(data)
+	reconcileList(data, "Inventory")
+	reconcileList(data, "SkillInventory")
+	reconcileList(data, "WeaponInventory")
+end
+
 local function syncPlayer(player: Player)
 	local data = DataServiceServer.getData(player)
 	if data then
+		reconcileData(data)
 		applyAttributes(player, data)
 		if networker then
 			networker:fire(player, "DataUpdated", data)
